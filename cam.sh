@@ -1,22 +1,39 @@
 #!/bin/bash
 
-## Hier kommen die Fotos hin
+## Please edit the example paths. Pay attention to leading and trainling slashes.
+## Do not use a configuration file for fswebcam. Edit the command line instead.
+
+## directory for the photos
 localdir = /var/foto/
 
-## Das ist der remotepfad fuer das Foto fuer die webseite
+## remote path, where the taken photo is stored
 remotedir = html/foto
 
-## Hier wird das Archiv angelegt
+## the root directory of your archive on remote machine
 remarchdir = archiv/
 
-## Hier kommen die Configs für ncftpput etc. rein
-configpath = /path/foo/bar/
+## ncftp configuration file
+ftpcfg = /absolute/path/to/ftp.cfg
 
-fswebcam -r 960x720 -d /dev/video0 ${localdir}webcam.jpg
-ncftpput -f ${configpath}ftp.cfg $remotedir ${localdir}webcam.jpg
+## taking the photo
+fswebcam -r 960x720 -d /dev/video0 ${localdir}webcam.jpg 1>/dev/null
 
+## uploading the file via FTP and attending to create the remote dir if it does not exist
+ncftpput -f $ftpcfg -m $remotedir ${localdir}webcam.jpg 1>/dev/null
+
+## generating date
 datum = $(date +%-Y_%-m_%-d)
+
+## generating unix timestamp
 timestamp = ${date +"%s"}
+
+## renaming the photo file
 mv ${localdir}webcam.jpg ${localdir}${timestamp}.jpg
-ncftpput -f ${configpath}ftp.cfg -m ${remarchdir}${datum} ${localdir}${timestamp}.jpg
+
+## uploading the renamed file to a directory named after the current date and trying to create if it does not exist
+ncftpput -f ${configpath}ftp.cfg -m ${remarchdir}${datum} ${localdir}${timestamp}.jpg 1>/dev/null
+
+## cleaning up
 rm -rf ${localdir}${timestamp}.jpg
+
+echo "Done: $datum $(date +"%T")"
